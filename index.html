@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Registro local para la reunión mensual MOR.">
+  <title>Indicadores MOR</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="vendor/jszip.min.js"></script>
+  <script defer src="plantilla.js"></script>
+  <script defer src="modules/exportar-libro.js"></script>
+  <script defer src="modules/unir-indicadores.js"></script>
+  <script defer src="modules/modelo-escala.js"></script>
+  <script defer src="modules/exportar-mor.js"></script>
+  <script defer src="objetivos-base.js"></script>
+  <script defer src="modules/modelo-objetivos.js"></script>
+  <script defer src="mor.js"></script>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-icon">▥</span> MOR <span class="brand-divider"></span><span class="brand-sub">Reunión mensual</span></div><span class="local-badge">En este equipo</span></header>
+  <main>
+    <section class="heading"><div><p class="eyebrow">CONTROL MENSUAL</p><h1>Indicadores de gestión.</h1><p class="muted">Registro independiente para la reunión mensual MOR.</p></div><div class="actions"><button id="backup">Respaldar MOR</button><button id="restore">Restaurar respaldo</button><button id="exportData">↓ Exportar datos</button><button id="exportCurrent" class="primary">↓ Exportar indicador</button><button id="exportMany">↓ Exportar varios</button><button id="exportPdf">↓ Exportar PDF</button><input id="restoreFile" type="file" accept="application/json" hidden></div></section>
+    <div id="message" class="message" role="status" hidden></div>
+    <section class="config panel" aria-label="Período MOR">
+      <label>Indicador<select id="metric"><option value="sales">Venta Neta</option><option value="tp">Ticket Promedio</option><option value="mc">MC · Margen de contribución</option><option value="roPercent">Resultado Operacional</option><option value="sa">Servicios Alimenticios</option><option value="visits">Atenciones</option></select></label>
+      <label>Año<input id="year" type="number" min="2000" max="2100"></label>
+      <label>Mes<input id="month" type="month"></label>
+      <label class="wide">Título del indicador<input id="title" maxlength="100"></label>
+    </section>
+    <section id="stats" class="stats" aria-label="Resumen mensual">
+      <div><span>Resultado del mes</span><strong id="currentValue">—</strong></div>
+      <div id="roValueStat" hidden><span>Resultado Operacional</span><strong id="roValue">—</strong></div>
+      <div><span>Objetivo del mes</span><strong id="currentGoal">Sin objetivo</strong></div>
+      <div><span>Atenciones</span><strong id="monthVisits">—</strong></div>
+      <div><span>Monto cajeros</span><strong id="cashierAmount">—</strong></div>
+    </section>
+    <section class="panel indicator">
+      <div class="section-head"><div><h2 id="chartTitle">Venta Neta</h2><p class="muted">Resultados mensuales · escala y objetivos editables</p></div><div class="actions"><button id="loadRo">Cargar planilla RO</button><button id="dataButton" class="primary">Ingresar resultado</button><button id="attendanceButton">Cargar atenciones</button><button id="scaleButton">Escala</button><button id="goalsButton">Objetivos</button><button id="textsButton">Textos del indicador</button></div></div>
+      <div class="chart-scroll"><div id="chart" class="chart"></div></div>
+      <div class="chart-footer"><div class="legend"><span><i style="--color:#70AD47"></i>Cumple o supera objetivo</span><span><i style="--color:#FF0000"></i>Bajo objetivo</span><span><i style="--color:#000"></i>Sin objetivo</span><span><i style="--color:#fff"></i>Sin datos</span></div></div>
+    </section>
+    <section id="roDashboard" class="panel registry" hidden>
+      <div class="section-head"><div><h2>Dashboard mensual MOR</h2></div><button id="reloadRoFile">Cargar / reemplazar planilla</button></div>
+      <div class="table-scroll ro-summary-scroll"><table id="roSummaryTable"><thead><tr><th>Mes</th><th>Venta neta</th><th>Costos de Explotación</th><th>Comisiones</th><th>Costos</th><th>RO</th><th>RO (%)</th><th>MC</th><th>Atenciones</th><th>Ticket promedio</th><th>SA</th></tr></thead><tbody id="roSummaryRows"></tbody></table></div>
+      <details class="ro-detail-fold"><summary>Detalle de la planilla · editar conceptos y valores</summary><div class="section-head ro-detail-heading"><p class="muted">Puedes renombrar, agregar o quitar conceptos y editar los valores de cada mes.</p><button id="addRoItem">＋ Agregar concepto</button></div><div class="table-scroll ro-detail-scroll"><table id="roDetailTable"><thead id="roDetailHead"></thead><tbody id="roDetailRows"></tbody></table></div></details>
+    </section>
+    <footer class="page-footer"><span>MOR · Objetivos y datos se guardan en este navegador</span><span>Sin macros · Sin conexión</span></footer>
+  </main>
+
+  <dialog id="roImportDialog"><form id="roImportForm"><div class="dialog-heading"><div><p class="eyebrow">CARGA POR AÑO</p><h2>Planilla RO</h2></div><button type="button" class="close" data-close="roImportDialog">×</button></div><label>Año al que corresponde la planilla<input id="roImportYear" type="number" min="2000" max="2100" required></label><p class="muted">La carga reemplaza únicamente el año elegido y conserva los demás años.</p><input id="roFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden><p id="roImportError" class="module-error" hidden></p><div class="dialog-actions"><button type="button" data-close="roImportDialog">Cancelar</button><button type="button" id="chooseRoFile" class="primary">Seleccionar archivo Excel</button></div></form></dialog>
+  <dialog id="attendanceDialog"><form id="attendanceForm"><div class="dialog-heading"><div><p class="eyebrow">REPORTE MENSUAL</p><h2>Pegar atenciones</h2></div><button type="button" class="close" data-close="attendanceDialog">×</button></div><p>Pega las tres columnas: <b>Cajero · Atenciones · Monto cajero</b>. Se guardan para el mes seleccionado y se usan para calcular el total de atenciones y el ticket promedio.</p><label>Datos del reporte<textarea id="attendancePaste" rows="10" spellcheck="false" placeholder="Deyver Martinez&#9;586&#9;3.260.928"></textarea></label><div id="attendancePreview" class="paste-preview">El reporte reemplazará las filas del mes seleccionado.</div><p id="attendanceError" class="module-error" hidden></p><div class="dialog-actions"><button type="button" data-close="attendanceDialog">Cancelar</button><button type="submit" class="primary">Guardar reporte</button></div></form></dialog>
+  <dialog id="dataDialog"><form id="dataForm"><div class="dialog-heading"><div><p class="eyebrow" id="dataMonth"></p><h2 id="dataTitle">Ingresar resultado</h2></div><button type="button" class="close" data-close="dataDialog">×</button></div><label id="dataLabel">Resultado del mes<input id="dataValue" type="number" step="any"></label><p class="muted" id="dataHint"></p><div class="dialog-actions"><button type="button" data-close="dataDialog">Cancelar</button><button type="submit" class="primary">Guardar resultado</button></div></form></dialog>
+  <dialog id="goalsDialog" class="wide-dialog"><form id="goalsForm"><div class="dialog-heading"><div><p class="eyebrow" id="goalsMetric"></p><h2>Objetivos</h2></div><button type="button" class="close" data-close="goalsDialog">×</button></div><div class="annual-toolbar"><label>Año de la tabla<input id="goalsYear" type="number" min="2000" max="2100" required></label><p id="goalsSource" class="muted"></p></div><details id="goalsPastePanel" class="goals-paste-panel"><summary>Pegar tabla mensual de objetivos</summary><p class="muted">Pega desde Excel el bloque completo con los meses en la primera fila y los conceptos en la primera columna. Se reconocen los conceptos del modelo MOR; las filas calculadas se vuelven a calcular.</p><textarea id="goalsPaste" rows="8" spellcheck="false" placeholder="Objetivos/mes&#9;ENERO&#9;FEBRERO&#9;…&#10;Dias efectivos&#9;26&#9;24&#9;…"></textarea><div class="actions"><button type="button" id="importGoalsPaste" class="primary">Importar tabla pegada</button><span id="goalsPasteStatus" class="muted" role="status"></span></div></details><p>Meses en columnas y objetivos en filas, como en objetivos.xlsx. Las filas calculadas se actualizan automáticamente; porcentajes en formato 38,28 para 38,28 %.</p><div class="table-scroll annual-scroll" tabindex="0" aria-label="Tabla anual de objetivos; desplázate horizontalmente para ver los meses"><table id="annualGoals"><thead id="annualGoalsHead"></thead><tbody id="annualGoalsRows"></tbody></table></div><p id="goalError" class="module-error" hidden></p><div class="dialog-actions"><button type="button" data-close="goalsDialog">Cancelar</button><button type="submit" class="primary">Guardar objetivos</button></div></form></dialog>
+  <dialog id="scaleDialog"><form id="scaleForm"><div class="dialog-heading"><div><p class="eyebrow" id="scaleMetric"></p><h2>Escala del indicador</h2></div><button type="button" class="close" data-close="scaleDialog">×</button></div><div class="scale-settings"><label>Mínimo<input id="scaleMin" type="number" step="any" required></label><label>Máximo<input id="scaleMax" type="number" step="any" required></label><button type="button" id="autoScale">Calcular desde los datos</button></div><p id="scaleError" class="module-error" hidden></p><div class="dialog-actions"><button type="button" data-close="scaleDialog">Cancelar</button><button type="submit" class="primary">Guardar escala</button></div></form></dialog>
+  <dialog id="textsDialog" class="wide-dialog"><form id="textsForm"><div class="dialog-heading"><div><p class="eyebrow" id="textsMetric"></p><h2>Textos del indicador</h2></div><button type="button" class="close" data-close="textsDialog">×</button></div><div id="textsFields" class="indicator-text-grid"></div><p id="textsPreview" class="muted" style="white-space:pre-line;text-align:center"></p><p id="textsStatus" class="muted" role="status"></p><div class="dialog-actions"><button type="button" id="textsReset">Usar valores predeterminados</button><button type="button" data-close="textsDialog">Cerrar</button><button type="submit" class="primary">Guardar textos</button></div></form></dialog>
+  <dialog id="multiExportDialog"><form id="multiExportForm"><div class="dialog-heading"><div><p class="eyebrow" id="exportModeLabel">EXPORTAR VARIOS INDICADORES</p><h2>Seleccionar indicadores</h2></div><button type="button" class="close" data-close="multiExportDialog">×</button></div><div class="actions"><button type="button" id="exportSelectAll">Seleccionar todos</button><button type="button" id="exportSelectNone">Quitar selección</button></div><div id="exportChoices" class="multi-export-choices"></div><p id="exportCount" class="muted"></p><p id="exportError" class="module-error" hidden></p><div class="dialog-actions"><button type="button" data-close="multiExportDialog">Cerrar</button><button type="submit" id="exportSubmit" class="primary">Descargar</button></div></form></dialog>
+</body>
+</html>
